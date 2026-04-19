@@ -15,25 +15,20 @@
                                   ItemsSource="{Binding Children}">
 
             <!--Display the TopLevelName property in the first level.-->
-            <TextBlock Text="{Binding Name}" LineHeight="19"/>
+            <TextBlock Text="{Binding Name}" LineHeight="19">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMarkedForDeletion}" Value="True">
+                                <Setter Property="Foreground" Value="DarkRed"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="TextDecorations" Value="Strikethrough"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
 
-            <!--Display each string in the SecondLevelItems property in
-          the second level.-->
-            <HierarchicalDataTemplate.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text="{Binding}" LineHeight="19"/>
-                </DataTemplate>
-            </HierarchicalDataTemplate.ItemTemplate>
-
-            <!--Set the foreground of the items in the second level
-          to Navy.-->
-            <!--
-            <HierarchicalDataTemplate.ItemContainerStyle>
-                <Style TargetType="TreeViewItem">
-                    <Setter Property="Foreground" Value="Navy"/>
-                </Style>
-            </HierarchicalDataTemplate.ItemContainerStyle>
-            -->
         </HierarchicalDataTemplate>
     </Page.Resources>
     <Grid>
@@ -51,6 +46,10 @@
                             <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                 <MenuItem Header="Open in Explorer" Command="{Binding OpenInExplorerCommand}"/>
                                 <MenuItem Header="Copy Path" Command="{Binding CopyPathCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Mark Asset for Deletion" Command="{Binding MarkForDeletionCommand}" IsEnabled="{Binding CanMarkForDeletion}"/>
+                                <MenuItem Header="Unmark Deletion" Command="{Binding UnmarkDeletionCommand}" IsEnabled="{Binding CanUnmarkDeletion}"/>
+                                <MenuItem Header="Save Pending Deletions" Command="{Binding SavePendingDeletionsCommand}"/>
                             </ContextMenu>
                         </Setter.Value>
                     </Setter>
@@ -59,7 +58,13 @@
         </TreeView>
         <!--litetreeview:LiteTreeViewControl Margin="0,0,0,36" MyItemsSource="{Binding TreeItemSource}" SelectionChanged="LiteTreeViewControl_SelectionChanged"/-->
         <ToggleButton Content="{StaticResource Icon_Folder}" ToolTip="{x:Static loc:Resources.AssetTree_Grouped_Tooltip}" HorizontalAlignment="Left" Margin="5,0,0,5" VerticalAlignment="Bottom" Height="24" Width="24" IsChecked="{Binding IsPackageMode, Mode=TwoWay}"/>
-        <TextBox Height="24" Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=300}" Margin="34,0,26,5" TextWrapping="Wrap" VerticalAlignment="Bottom" ToolTip="{x:Static loc:Resources.AssetTree_Filter_Tooltip}"/>
+        <TextBox Height="24" Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Delay=300}" Margin="34,0,122,5" TextWrapping="Wrap" VerticalAlignment="Bottom" ToolTip="{x:Static loc:Resources.AssetTree_Filter_Tooltip}"/>
+        <Button Command="{Binding SavePendingDeletionsCommand}" HorizontalAlignment="Right" Margin="0,0,26,5" VerticalAlignment="Bottom" Width="90" Height="24">
+            <TextBlock>
+                <Run Text="Save "/>
+                <Run Text="{Binding PendingDeletionCount, Mode=OneWay}"/>
+            </TextBlock>
+        </Button>
         <Button Content="X" Command="{Binding ClearFilterCommand}" HorizontalAlignment="Right" Margin="0,0,5,5" VerticalAlignment="Bottom" Width="16" Height="24" BorderBrush="{x:Null}" Background="{x:Null}" FontSize="16" ToolTip="{x:Static loc:Resources.AssetTree_FilterRemove_Tooltip}"/>
     </Grid>
 </Page>

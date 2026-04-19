@@ -171,6 +171,32 @@ namespace TpacTool.Lib
 			return result;
 		}
 
+		public AssetPackage GetPackage(AssetItem asset)
+		{
+			if (asset == null)
+				return null;
+
+			return _loadedPackages.FirstOrDefault(package => package.Items.Contains(asset));
+		}
+
+		public bool RemoveAssetFromLookup(AssetItem asset)
+		{
+			if (asset == null)
+				return false;
+
+			var removed = _loadedAssets.Remove(asset);
+			if (_assetLookup.TryGetValue(asset.Guid, out var lookupAsset) && ReferenceEquals(lookupAsset, asset))
+			{
+				_assetLookup.Remove(asset.Guid);
+				removed = true;
+			}
+
+			if (removed)
+				asset.Invalid = true;
+
+			return removed;
+		}
+
 		[Obsolete] // WIP. adding assert lookup is not finished yet
 		public void AddPackage(AssetPackage package)
 		{

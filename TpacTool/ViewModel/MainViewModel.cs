@@ -52,6 +52,8 @@ namespace TpacTool
 
 		public static readonly Guid StatusEvent = Guid.NewGuid();
 
+		public static readonly Guid ReloadAssetFolderEvent = Guid.NewGuid();
+
 		private int _statusRepeatCount = 0;
 
 		private string _rawStatusMsg = null;
@@ -159,6 +161,8 @@ namespace TpacTool
 
 				MessengerInstance.Register<string>(this, StatusEvent, msg => StatusMsg = msg);
 
+				MessengerInstance.Register<string>(this, ReloadAssetFolderEvent, ReloadAssetFolder);
+
 				MessengerInstance.Register<object>(this, LoadingViewModel.LoadingCancelledEvent, OnLoadingCancelled);
 
 				/*var workDir = Path.GetDirectoryName(this.GetType().Assembly.Location);
@@ -200,6 +204,15 @@ namespace TpacTool
 				var path = rwd[arg];
 				Load(path, true);
 			}
+		}
+
+		private void ReloadAssetFolder(string path)
+		{
+			if (string.IsNullOrWhiteSpace(path))
+				return;
+
+			BeforeLoad();
+			Load(path);
 		}
 
 		private void OnLoadingCancelled(object obj)

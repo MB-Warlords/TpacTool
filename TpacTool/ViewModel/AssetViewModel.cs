@@ -3,17 +3,36 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Windows.Input;
+using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight.CommandWpf;
 using TpacTool.Lib;
 
 namespace TpacTool
 {
-	public abstract class AssetViewModel
+	public abstract class AssetViewModel : ViewModelBase
 	{
 		private bool _isSelected;
 
 		protected AssetTreeViewModel _parentVM;
 
 		public abstract string Name { get; }
+
+		public ICommand OpenInExplorerCommand => _parentVM.OpenInExplorerCommand;
+
+		public ICommand CopyPathCommand => _parentVM.CopyPathCommand;
+
+		public virtual ICommand MarkForDeletionCommand => null;
+
+		public virtual ICommand UnmarkDeletionCommand => null;
+
+		public ICommand SavePendingDeletionsCommand => _parentVM.SavePendingDeletionsCommand;
+
+		public virtual bool CanMarkForDeletion => false;
+
+		public virtual bool CanUnmarkDeletion => false;
+
+		public virtual bool IsMarkedForDeletion => false;
 
 		public abstract bool HasItems { get; }
 
@@ -73,6 +92,14 @@ namespace TpacTool
 				_children.AddRange(children);
 			}
 
+			public bool Remove(AssetViewModel child)
+			{
+				var removed = _children.Remove(child);
+				if (_filteredChildren == null || ReferenceEquals(_filteredChildren, _children))
+					_filteredChildren = _children;
+				return removed;
+			}
+
 			public override bool Filter(string filterText)
 			{
 				_filteredChildren = _children.Where(vm => vm.Filter(filterText)).AsEnumerable();
@@ -108,7 +135,25 @@ namespace TpacTool
 
 			private readonly AssetItem _asset;
 
-			public override string Name => _asset.Name;
+			private readonly ICommand _markForDeletionCommand;
+
+			private readonly ICommand _unmarkDeletionCommand;
+
+			private bool _isMarkedForDeletion;
+
+			public override string Name => IsMarkedForDeletion ? "[DELETE] " + _asset.Name : _asset.Name;
+
+			public AssetItem Asset => _asset;
+
+			public override bool IsMarkedForDeletion => _isMarkedForDeletion;
+
+			public override ICommand MarkForDeletionCommand => _markForDeletionCommand;
+
+			public override ICommand UnmarkDeletionCommand => _unmarkDeletionCommand;
+
+			public override bool CanMarkForDeletion => !IsMarkedForDeletion;
+
+			public override bool CanUnmarkDeletion => IsMarkedForDeletion;
 
 			public override bool IsSelected
 			{
@@ -128,6 +173,20 @@ namespace TpacTool
 			public Item(AssetTreeViewModel parentVm, AssetItem asset) : base(parentVm)
 			{
 				_asset = asset;
+				_markForDeletionCommand = new RelayCommand(() => _parentVM.MarkAssetForDeletion(this), () => CanMarkForDeletion);
+				_unmarkDeletionCommand = new RelayCommand(() => _parentVM.UnmarkAssetForDeletion(this), () => CanUnmarkDeletion);
+			}
+
+			public void SetMarkedForDeletion(bool value)
+			{
+				if (_isMarkedForDeletion == value)
+					return;
+
+				_isMarkedForDeletion = value;
+				RaisePropertyChanged(nameof(Name));
+				RaisePropertyChanged(nameof(IsMarkedForDeletion));
+				RaisePropertyChanged(nameof(CanMarkForDeletion));
+				RaisePropertyChanged(nameof(CanUnmarkDeletion));
 			}
 
 			public override bool Filter(string filterText)
